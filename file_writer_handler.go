@@ -7,10 +7,6 @@ import (
     "io/ioutil"
 )
 
-type PacketHandler interface {
-    Handle(msg []byte)
-}
-
 type FileWriterHandler struct {
     OutputDir string
 }
@@ -23,13 +19,4 @@ func (fileWriter FileWriterHandler) Handle(msg []byte) {
     CheckError(err)
 
     fmt.Println("Wrote", filename)
-
-}
-
-type ServerWriterHandler struct {
-    ServerUrl string
-}
-
-func (serverWriter ServerWriterHandler) Handle(msg []byte) {
-    fmt.Println("writing packet to server", serverWriter.ServerUrl)
 }

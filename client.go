@@ -59,3 +59,7 @@ func main() {
         }
     }
 }
+
+type PacketHandler interface {
+    Handle(msg []byte)
+}

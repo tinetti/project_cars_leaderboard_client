@@ -11,13 +11,13 @@ type Header struct {
 }
 
 type Packet struct {
-    Header                    Header
-    TelemetryData             TelemetryData
-    ParticipantInfo           ParticipantInfo
-    ParticipantInfoAdditional ParticipantInfoAdditional
+    Header          Header
+    Telemetry       Telemetry
+    Participants    Participants
+    ParticipantsExt ParticipantsExt
 }
 
-type TelemetryData struct {
+type Telemetry struct {
     GameSessionState           uint8
     ViewedParticipantIndex     int8
     NumParticipants            int8
@@ -102,7 +102,7 @@ type TelemetryData struct {
     ExtentsCentreZ             float32
 }
 
-type ParticipantInfo struct {
+type Participants struct {
     RawCarName         [64]byte
     RawCarClassName    [64]byte
     RawTrackLocation   [64]byte
@@ -111,16 +111,16 @@ type ParticipantInfo struct {
     RawFastestLapTimes [16]float32
 }
 
-type ParticipantInfoAdditional struct {
+type ParticipantsExt struct {
 
 }
 
 type PacketType uint8
 
 const (
-    PacketType_TELEMETRY_DATA PacketType = iota
-    PacketType_PARTICIPANT_STRINGS PacketType = iota
-    PacketType_PARTICIPANT_STRINGS_ADDITIONAL PacketType = iota
+    PacketType_TELEMETRY PacketType = iota
+    PacketType_PARTICIPANT PacketType = iota
+    PacketType_PARTICIPANT_ADDITIONAL PacketType = iota
 )
 
 type GameState uint8
@@ -166,23 +166,23 @@ func Parse(raw_message []byte) (Packet, error) {
     packet.Header = header
 
     switch (header.GetPacketType()) {
-    case PacketType_TELEMETRY_DATA:
-        telemetryData := TelemetryData{}
+    case PacketType_TELEMETRY:
+        telemetryData := Telemetry{}
         err := binary.Read(buf, binary.LittleEndian, &telemetryData)
         CheckError(err)
-        packet.TelemetryData = telemetryData
+        packet.Telemetry = telemetryData
 
-    case PacketType_PARTICIPANT_STRINGS:
-        participantInfo := ParticipantInfo{}
+    case PacketType_PARTICIPANT:
+        participantInfo := Participants{}
         err := binary.Read(buf, binary.LittleEndian, &participantInfo)
         CheckError(err)
-        packet.ParticipantInfo = participantInfo
+        packet.Participants = participantInfo
 
-    case PacketType_PARTICIPANT_STRINGS_ADDITIONAL:
-        participantInfoAdditional := ParticipantInfoAdditional{}
+    case PacketType_PARTICIPANT_ADDITIONAL:
+        participantInfoAdditional := ParticipantsExt{}
         err := binary.Read(buf, binary.LittleEndian, &participantInfoAdditional)
         CheckError(err)
-        packet.ParticipantInfoAdditional = participantInfoAdditional
+        packet.ParticipantsExt = participantInfoAdditional
     }
 
     return packet, err
@@ -210,26 +210,26 @@ func toString(buffer [64]byte) string {
     return string(buffer[:n])
 }
 
-func (participantInfo ParticipantInfo) GetCarName() string {
+func (participantInfo Participants) GetCarName() string {
     return toString(participantInfo.RawCarName)
 }
 
-func (participantInfo ParticipantInfo) GetCarClassName() string {
+func (participantInfo Participants) GetCarClassName() string {
     return toString(participantInfo.RawCarClassName)
 }
 
-func (participantInfo ParticipantInfo) GetTrackLocation() string {
+func (participantInfo Participants) GetTrackLocation() string {
     return toString(participantInfo.RawTrackLocation)
 }
 
-func (participantInfo ParticipantInfo) GetTrackVariation() string {
+func (participantInfo Participants) GetTrackVariation() string {
     return toString(participantInfo.RawTrackVariation)
 }
 
-func (participantInfo ParticipantInfo) GetNames() []string {
+func (participantInfo Participants) GetNames() []string {
     return toStrings(participantInfo.RawNames)
 }
 
-func (participantInfo ParticipantInfo) GetFastestLapTimes() []float32 {
+func (participantInfo Participants) GetFastestLapTimes() []float32 {
     return participantInfo.RawFastestLapTimes[:len(participantInfo.RawFastestLapTimes)]
 }
