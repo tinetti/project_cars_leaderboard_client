@@ -1,31 +1,30 @@
 package main
 
 import (
-	"io/ioutil"
-	"testing"
+    "testing"
 )
 
-func TestHandle(t *testing.T) {
-	mockHandler := &MockHandler{Messages:[][]byte{}}
-	client := &Client{Handlers:[]PacketHandler{mockHandler}}
+func TestHandleBytes(t *testing.T) {
+    mockHandler := &MockHandler{}
+    client := &Client{Handlers:[]PacketHandler{mockHandler}}
 
-	contents, err := ioutil.ReadFile("test/pcars_udp_0.bin")
-	if err != nil {
-		t.Error(err)
-	}
+    packet, err := ReadFile("test/pcars_udp_0.bin")
+    if err != nil {
+        t.Error(err)
+        return
+    }
 
-	client.Handle(contents)
+    client.HandlePacket(packet)
 
-	if len(mockHandler.Messages) != 1 {
-		t.Errorf("expected %s != actual %s", len(mockHandler.Messages), 1)
-	}
+    if m := AssertEquals(len(mockHandler.Packets), 1); m != nil {
+        t.Error(m)
+    }
 }
 
 type MockHandler struct {
-	Messages [][]byte
+    Packets []*Packet
 }
 
-func (mockHandler *MockHandler) Handle(msg []byte) {
-	mockHandler.Messages = append(mockHandler.Messages, msg)
+func (mockHandler *MockHandler) HandlePacket(packet *Packet) {
+    mockHandler.Packets = append(mockHandler.Packets, packet)
 }
-

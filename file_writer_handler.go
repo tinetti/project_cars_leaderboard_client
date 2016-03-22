@@ -11,12 +11,12 @@ type FileWriterHandler struct {
     OutputDir string
 }
 
-func (fileWriter FileWriterHandler) Handle(msg []byte) {
+func (fileWriter FileWriterHandler) HandlePacket(packet *Packet) {
     now := time.Now()
     filename := fmt.Sprintf("/tmp/%s.pcars_bin", now)
     mode := os.FileMode(0644)
-    err := ioutil.WriteFile(filename, msg, mode)
-    CheckError(err)
+    err := ioutil.WriteFile(filename, packet.Marshal(), mode)
+    ExitOnError(err)
 
     fmt.Println("Wrote", filename)
 }

@@ -5,11 +5,17 @@ import (
     "os"
 )
 
-/* A Simple function to verify error */
-func CheckError(err error) {
-    if err != nil {
-        fmt.Println("Error: ", err)
+func ExitOnError(err error) {
+    if LogError(err) {
         os.Exit(0)
     }
 }
 
+func LogError(err error) bool {
+    if err != nil {
+        fmt.Println("Warn: ", err)
+        return true
+    }
+
+    return false
+}

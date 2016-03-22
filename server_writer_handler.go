@@ -3,32 +3,64 @@ package main
 import (
     "bytes"
     "encoding/json"
-    "fmt"
-    "io/ioutil"
     "net/http"
+    "fmt"
 )
 
 type ServerWriterHandler struct {
-    ServerUrl string
+    URL          string
+
+    LastLapTime  float32
+    Participants Participants
 }
 
-func (serverWriter ServerWriterHandler) Handle(msg []byte) {
-    packet, err := Parse(msg)
-    CheckError(err)
+func NewServerWriterHandler(URL string) ServerWriterHandler {
+    return ServerWriterHandler{
+        URL:URL,
+    }
+}
 
-    json, err := json.Marshal(packet)
-    CheckError(err)
+func (handler *ServerWriterHandler) HandlePacket(packet *Packet) {
+    /* START DEBUG */
+    //fmt.Printf("handling packet: %v (%v)\n", packet.Header.GetPacketType(), packet.Header.GetSequenceNumber())
+    //j, err := json.Marshal(packet)
+    //LogError(err)
+    //fmt.Println("json:", string(j))
+    /* END DEBUG */
 
-    req, err := http.NewRequest("POST", serverWriter.ServerUrl, bytes.NewBuffer(json))
+    switch (packet.Header.GetPacketType()) {
+    case PacketType_TELEMETRY:
+        if packet.Telemetry.LastLapTime != handler.LastLapTime {
+            lapTime := NewLapTime(packet.Telemetry, handler.Participants)
+            jsonBytes, err := handler.PostLapTime(lapTime)
+            if (!LogError(err)) {
+                fmt.Printf("posted lap time: %v\n", string(jsonBytes))
+            }
+        }
+        handler.LastLapTime = packet.Telemetry.LastLapTime
+
+    case PacketType_PARTICIPANT:
+        handler.Participants = packet.Participants
+        break
+
+    case PacketType_PARTICIPANT_ADDITIONAL:
+    default:
+        break
+    }
+}
+
+func (handler *ServerWriterHandler) PostLapTime(lapTime LapTime) ([]byte, error) {
+    jsonBytes, err := json.Marshal(lapTime)
+    if err != nil {
+        return jsonBytes, err
+    }
+
+    req, err := http.NewRequest("POST", handler.URL, bytes.NewBuffer(jsonBytes))
     req.Header.Set("Content-Type", "application/json")
 
     client := &http.Client{}
     resp, err := client.Do(req)
-    CheckError(err)
     defer resp.Body.Close()
 
-    fmt.Println("response Status:", resp.Status)
-    fmt.Println("response Headers:", resp.Header)
-    body, _ := ioutil.ReadAll(resp.Body)
-    fmt.Println("response Body:", string(body))
+    return jsonBytes, err
 }

@@ -1,81 +1,82 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"net"
+    "flag"
+    "fmt"
+    "net"
 )
 
 type Client struct {
-	Handlers []PacketHandler
+    Handlers []PacketHandler
 }
 
 func main() {
-	handlers := createHandlers()
-	fmt.Println("Sending data to", handlers)
+    handlers := createHandlers()
 
-	client := &Client{Handlers:handlers}
-	client.start()
+    client := Client{Handlers:handlers}
+    client.start()
 }
 
 func (client *Client) start() {
-	/* Prepare address at port 5606 */
-	addr, err := net.ResolveUDPAddr("udp", ":5606")
-	CheckError(err)
+    /* Prepare address at port 5606 */
+    addr, err := net.ResolveUDPAddr("udp", ":5606")
+    ExitOnError(err)
 
-	/* Now listen at selected port */
-	serverConn, err := net.ListenUDP("udp", addr)
-	CheckError(err)
-	defer serverConn.Close()
+    /* Now listen at selected port */
+    serverConn, err := net.ListenUDP("udp", addr)
+    ExitOnError(err)
+    defer serverConn.Close()
 
-	fmt.Println("Started listening on port", addr)
+    fmt.Println("Started listening on port", addr)
 
-	buf := make([]byte, 2048)
-	for {
-		_, _, err := serverConn.ReadFromUDP(buf)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			continue
-		}
+    buf := make([]byte, 2048)
+    for {
+        _, _, err := serverConn.ReadFromUDP(buf)
+        if err != nil {
+            fmt.Println("Error: ", err)
+            continue
+        }
 
-		client.Handle(buf)
-	}
+        packet, err := Unmarshal(buf)
+        LogError(err)
+        client.HandlePacket(packet)
+    }
 }
 
-func (client *Client) Handle(buf []byte) {
-	for i := 0; i < len(client.Handlers); i++ {
-		handler := client.Handlers[i]
-		handler.Handle(buf)
-	}
+func (client *Client) HandlePacket(packet *Packet) {
+    for i := 0; i < len(client.Handlers); i++ {
+        handler := client.Handlers[i]
+        handler.HandlePacket(packet)
+    }
 }
 
 func createHandlers() []PacketHandler {
-	handlers := make([]PacketHandler, 0)
+    handlers := []PacketHandler{}
 
-	var outputDir string
-	flag.StringVar(&outputDir, "output-dir", "", "output directory")
+    var outputDir string
+    flag.StringVar(&outputDir, "output-dir", "", "output directory")
 
-	var serverUrl string
-	flag.StringVar(&serverUrl, "server-url", "", "server url")
+    var serverUrl string
+    flag.StringVar(&serverUrl, "server-url", "", "server url")
 
-	flag.Parse()
+    flag.Parse()
 
-	if len(outputDir) > 0 {
-		handler := FileWriterHandler{outputDir}
-		handlers = append(handlers, handler)
-	}
-	if len(serverUrl) > 0 {
-		handler := ServerWriterHandler{serverUrl}
-		handlers = append(handlers, handler)
-	}
+    if len(outputDir) > 0 {
+        handler := &FileWriterHandler{outputDir}
+        handlers = append(handlers, handler)
+    }
+    if len(serverUrl) > 0 {
+        handler := &ServerWriterHandler{URL:serverUrl}
+        handlers = append(handlers, handler)
+    }
 
-	if (len(handlers) == 0) {
-		println("no handlers defined.  run again with --help")
-	}
+    if (len(handlers) == 0) {
+        println("no handlers defined.  run again with --help")
+    }
 
-	return handlers
+    return handlers
 }
 
 type PacketHandler interface {
-	Handle(msg []byte)
+    HandlePacket(packet *Packet)
 }

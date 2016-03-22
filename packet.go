@@ -3,6 +3,7 @@ package main
 import (
     "encoding/binary"
     "bytes"
+    "io/ioutil"
 )
 
 type Header struct {
@@ -156,32 +157,46 @@ const (
     RaceState_DNF RaceState = iota
 )
 
-func Parse(raw_message []byte) (Packet, error) {
-    header := Header{}
+func (packet *Packet) Marshal() []byte {
+    buffer := &bytes.Buffer{}
+    binary.Write(buffer, binary.LittleEndian, packet)
+    return buffer.Bytes()
+}
+
+func ReadFile(filename string) (*Packet, error) {
+    contents, err := ioutil.ReadFile(filename)
+    if err != nil {
+        return &Packet{}, err
+    }
+
+    return Unmarshal(contents)
+}
+
+func Unmarshal(raw_message []byte) (*Packet, error) {
+    packet := &Packet{}
     buf := bytes.NewReader(raw_message)
-    err := binary.Read(buf, binary.LittleEndian, &header)
-    CheckError(err)
+    err := binary.Read(buf, binary.LittleEndian, &packet.Header)
+    if LogError(err) {
+        return packet, err
+    }
 
-    packet := Packet{}
-    packet.Header = header
-
-    switch (header.GetPacketType()) {
+    switch (packet.Header.GetPacketType()) {
     case PacketType_TELEMETRY:
         telemetryData := Telemetry{}
         err := binary.Read(buf, binary.LittleEndian, &telemetryData)
-        CheckError(err)
+        LogError(err)
         packet.Telemetry = telemetryData
 
     case PacketType_PARTICIPANT:
         participantInfo := Participants{}
         err := binary.Read(buf, binary.LittleEndian, &participantInfo)
-        CheckError(err)
+        LogError(err)
         packet.Participants = participantInfo
 
     case PacketType_PARTICIPANT_ADDITIONAL:
         participantInfoAdditional := ParticipantsExt{}
         err := binary.Read(buf, binary.LittleEndian, &participantInfoAdditional)
-        CheckError(err)
+        LogError(err)
         packet.ParticipantsExt = participantInfoAdditional
     }
 
