@@ -2,10 +2,13 @@
 *.o
 *.a
 *.so
+project_cars_leaderboard_client
 
 # Folders
 _obj
 _test
+output
+.idea
 
 # Architecture specific extensions/prefixes
 *.[568vq]

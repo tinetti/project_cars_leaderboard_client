@@ -59,6 +59,9 @@ func createHandlers() []PacketHandler {
     var serverUrl string
     flag.StringVar(&serverUrl, "server-url", "", "server url")
 
+    var debugMode bool
+    flag.BoolVar(&debugMode, "debug", true, "debug mode")
+
     flag.Parse()
 
     if len(outputDir) > 0 {
@@ -67,6 +70,10 @@ func createHandlers() []PacketHandler {
     }
     if len(serverUrl) > 0 {
         handler := &ServerWriterHandler{URL:serverUrl}
+        handlers = append(handlers, handler)
+    }
+    if debugMode {
+        handler := &DebugHandler{}
         handlers = append(handlers, handler)
     }
 
