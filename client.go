@@ -13,8 +13,10 @@ type Client struct {
 func main() {
     handlers := createHandlers()
 
-    client := Client{Handlers:handlers}
-    client.start()
+    if len(handlers) > 0 {
+        client := Client{Handlers:handlers}
+        client.start()
+    }
 }
 
 func (client *Client) start() {
@@ -60,7 +62,7 @@ func createHandlers() []PacketHandler {
     flag.StringVar(&serverUrl, "server-url", "", "server url")
 
     var debugMode bool
-    flag.BoolVar(&debugMode, "debug", true, "debug mode")
+    flag.BoolVar(&debugMode, "debug", false, "debug mode")
 
     flag.Parse()
 
