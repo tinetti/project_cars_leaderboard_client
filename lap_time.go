@@ -1,11 +1,11 @@
 package main
 
 type LapTime struct {
-    LapTime        float32
-    CarName        string
-    CarClassName   string
-    TrackLocation  string
-    TrackVariation string
+    LapTime        float32 `json:"lap_time"`
+    CarName        string  `json:"car_name"`
+    CarClassName   string  `json:"car_class_name"`
+    TrackLocation  string  `json:"track_location"`
+    TrackVariation string  `json:"track_variation"`
 }
 
 func NewLapTime(telemetry Telemetry, participants Participants) LapTime {
