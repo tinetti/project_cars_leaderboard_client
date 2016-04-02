@@ -23,6 +23,7 @@ func (handler *DebugHandler) HandlePacket(packet *Packet) {
 
     case PacketType_PARTICIPANT:
         handler.Participants = packet.Participants
+        fmt.Printf("participant packet -> car_name:%v, car_class:%v, track_location:%v, track_variation:%v\n", packet.Participants.GetCarName(), packet.Participants.GetCarClassName(), packet.Participants.GetTrackLocation(), packet.Participants.GetTrackVariation())
         break
 
     case PacketType_PARTICIPANT_ADDITIONAL:

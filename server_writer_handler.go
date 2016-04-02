@@ -25,14 +25,13 @@ func (handler *ServerWriterHandler) HandlePacket(packet *Packet) {
     case PacketType_TELEMETRY:
         if packet.Telemetry.LastLapTime != handler.LastLapTime {
             lapTime := NewLapTime(packet.Telemetry, handler.Participants)
-            jsonBytes, err := handler.PostLapTime(lapTime)
-            if (!LogError(err, "posting lap time")) {
-                fmt.Printf("posted lap time: %v\n", string(jsonBytes))
-            }
+            _, err := handler.PostLapTime(lapTime)
+            LogError(err, "posting lap time")
         }
         handler.LastLapTime = packet.Telemetry.LastLapTime
 
     case PacketType_PARTICIPANT:
+        fmt.Printf("participant packet -> car_name:%v, car_class:%v, track_location:%v, track_variation:%v\n", packet.Participants.GetCarName(), packet.Participants.GetCarClassName(), packet.Participants.GetTrackLocation(), packet.Participants.GetTrackVariation())
         handler.Participants = packet.Participants
         break
 
@@ -47,6 +46,8 @@ func (handler *ServerWriterHandler) PostLapTime(lapTime LapTime) ([]byte, error)
     if err != nil {
         return jsonBytes, err
     }
+
+    fmt.Println("posting lap time", string(jsonBytes))
 
     req, err := http.NewRequest("POST", handler.URL, bytes.NewBuffer(jsonBytes))
     req.Header.Set("Content-Type", "application/json")
