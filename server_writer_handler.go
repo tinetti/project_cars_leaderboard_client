@@ -21,19 +21,12 @@ func NewServerWriterHandler(URL string) ServerWriterHandler {
 }
 
 func (handler *ServerWriterHandler) HandlePacket(packet *Packet) {
-    /* START DEBUG */
-    //fmt.Printf("handling packet: %v (%v)\n", packet.Header.GetPacketType(), packet.Header.GetSequenceNumber())
-    //j, err := json.Marshal(packet)
-    //LogError(err)
-    //fmt.Println("json:", string(j))
-    /* END DEBUG */
-
     switch (packet.Header.GetPacketType()) {
     case PacketType_TELEMETRY:
         if packet.Telemetry.LastLapTime != handler.LastLapTime {
             lapTime := NewLapTime(packet.Telemetry, handler.Participants)
             jsonBytes, err := handler.PostLapTime(lapTime)
-            if (!LogError(err)) {
+            if (!LogError(err, "posting lap time")) {
                 fmt.Printf("posted lap time: %v\n", string(jsonBytes))
             }
         }

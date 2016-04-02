@@ -3,46 +3,25 @@ package main
 import (
     "flag"
     "fmt"
-    "net"
 )
 
 type Client struct {
+    Reader   PacketReader
     Handlers []PacketHandler
 }
 
 func main() {
-    handlers := createHandlers()
-
-    if len(handlers) > 0 {
-        client := Client{Handlers:handlers}
-        client.start()
+    client, err := createClient()
+    if err != nil {
+        LogError(err, "creating client")
+        return
     }
-}
 
-func (client *Client) start() {
-    /* Prepare address at port 5606 */
-    addr, err := net.ResolveUDPAddr("udp", ":5606")
-    ExitOnError(err)
-
-    /* Now listen at selected port */
-    serverConn, err := net.ListenUDP("udp", addr)
-    ExitOnError(err)
-    defer serverConn.Close()
-
-    fmt.Println("Started listening on port", addr)
-
-    buf := make([]byte, 2048)
-    for {
-        _, _, err := serverConn.ReadFromUDP(buf)
-        if err != nil {
-            fmt.Println("Error: ", err)
-            continue
-        }
-
-        packet, err := Unmarshal(buf)
-        LogError(err)
+    err = client.Reader.ReadPackets(func(packet *Packet) {
         client.HandlePacket(packet)
-    }
+    })
+
+    LogError(err, "reading packets")
 }
 
 func (client *Client) HandlePacket(packet *Packet) {
@@ -52,8 +31,10 @@ func (client *Client) HandlePacket(packet *Packet) {
     }
 }
 
-func createHandlers() []PacketHandler {
-    handlers := []PacketHandler{}
+func createClient() (*Client, error) {
+
+    var inputDir string
+    flag.StringVar(&inputDir, "input-dir", "", "input directory")
 
     var outputDir string
     flag.StringVar(&outputDir, "output-dir", "", "output directory")
@@ -66,6 +47,14 @@ func createHandlers() []PacketHandler {
 
     flag.Parse()
 
+    var reader PacketReader
+    if len(inputDir) > 0 {
+        reader = &DirectoryPacketReader{Directory:inputDir}
+    } else {
+        reader = &NetworkPacketReader{}
+    }
+
+    handlers := []PacketHandler{}
     if len(outputDir) > 0 {
         handler := &FileWriterHandler{outputDir}
         handlers = append(handlers, handler)
@@ -79,11 +68,22 @@ func createHandlers() []PacketHandler {
         handlers = append(handlers, handler)
     }
 
-    if (len(handlers) == 0) {
-        println("no handlers defined.  run again with --help")
+    var err error
+    if len(handlers) == 0 {
+        err = fmt.Errorf("no handlers defined - run again with --help for usage")
     }
 
-    return handlers
+    return &Client{Reader:reader, Handlers:handlers}, err
+}
+
+type OnRead func(*Packet)
+
+type PacketReader interface {
+    ReadPackets(onRead OnRead) error
+}
+
+type NetworkPacketReader struct {
+
 }
 
 type PacketHandler interface {

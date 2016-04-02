@@ -13,10 +13,10 @@ type FileWriterHandler struct {
 
 func (fileWriter FileWriterHandler) HandlePacket(packet *Packet) {
     now := time.Now()
-    filename := fmt.Sprintf("/tmp/%s.pcars_bin", now)
+    filename := fmt.Sprintf("%s/%s.pcars_bin", fileWriter.OutputDir, now)
     mode := os.FileMode(0644)
     err := ioutil.WriteFile(filename, packet.Marshal(), mode)
-    ExitOnError(err)
+    ExitOnError(err, "wirting file", filename)
 
     fmt.Println("Wrote", filename)
 }

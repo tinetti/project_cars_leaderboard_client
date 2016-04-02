@@ -176,27 +176,27 @@ func Unmarshal(raw_message []byte) (*Packet, error) {
     packet := &Packet{}
     buf := bytes.NewReader(raw_message)
     err := binary.Read(buf, binary.LittleEndian, &packet.Header)
-    if LogError(err) {
+    if LogError(err, "unmarshaling packet") {
         return packet, err
     }
 
     switch (packet.Header.GetPacketType()) {
     case PacketType_TELEMETRY:
         telemetryData := Telemetry{}
-        err := binary.Read(buf, binary.LittleEndian, &telemetryData)
-        LogError(err)
+        err = binary.Read(buf, binary.LittleEndian, &telemetryData)
+        err = WrapError(err, "reading telemetry packet")
         packet.Telemetry = telemetryData
 
     case PacketType_PARTICIPANT:
         participantInfo := Participants{}
-        err := binary.Read(buf, binary.LittleEndian, &participantInfo)
-        LogError(err)
+        err = binary.Read(buf, binary.LittleEndian, &participantInfo)
+        err = WrapError(err, "reading participant packet")
         packet.Participants = participantInfo
 
     case PacketType_PARTICIPANT_ADDITIONAL:
         participantInfoAdditional := ParticipantsExt{}
-        err := binary.Read(buf, binary.LittleEndian, &participantInfoAdditional)
-        LogError(err)
+        err = binary.Read(buf, binary.LittleEndian, &participantInfoAdditional)
+        err = WrapError(err, "reading ex participant packet")
         packet.ParticipantsExt = participantInfoAdditional
     }
 
