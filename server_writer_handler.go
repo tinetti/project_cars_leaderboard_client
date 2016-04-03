@@ -10,8 +10,9 @@ import (
 
 type ServerWriterHandler struct {
     URL          string
-    username     string
-    password     string
+    Username     string
+    Password     string
+
     userId       string
     authToken    string
 
@@ -19,13 +20,14 @@ type ServerWriterHandler struct {
     Participants Participants
 }
 
-func NewServerWriterHandler(URL string) ServerWriterHandler {
-    return ServerWriterHandler{
-        URL:URL,
-    }
-}
-
 func (handler *ServerWriterHandler) HandlePacket(packet *Packet) {
+    if len(handler.Username) > 0 && len(handler.userId) == 0 {
+        err := handler.Login()
+        if LogError(err) {
+            return
+        }
+    }
+
     switch (packet.Header.GetPacketType()) {
     case PacketType_TELEMETRY:
         if packet.Telemetry.LastLapTime != handler.LastLapTime {
@@ -84,18 +86,12 @@ func (handler *ServerWriterHandler) PostLapTime(lapTime LapTime) (int, string, e
 
     body = string(contents)
 
-    //fmt.Printf("response [status:%v, body:%v, err:%v]\n", status, body, err)
-
-    if status == 401 {
-        err = handler.Login()
-        if err == nil && len(handler.userId) > 0 {
-            fmt.Println("retrying posting lap time")
-            return handler.PostLapTime(lapTime)
-        }
+    if status < 200 || status > 299 {
+        err = fmt.Errorf("error posting lap [status:%v, body:%v]", status, body)
     }
 
     if err == nil {
-        fmt.Println("successfully posted lap")
+        fmt.Printf("successfully posted lap (%v): %v\n", status, body)
     }
 
     return status, body, err
@@ -103,7 +99,7 @@ func (handler *ServerWriterHandler) PostLapTime(lapTime LapTime) (int, string, e
 
 func (handler *ServerWriterHandler) Login() error {
     url := handler.URL + "/api/v1/login/"
-    reqBodyText := fmt.Sprintf("username=%v&password=%v", handler.username, handler.password)
+    reqBodyText := fmt.Sprintf("username=%v&password=%v", handler.Username, handler.Password)
     reqReader := bytes.NewBuffer([]byte(reqBodyText))
     req, err := http.NewRequest("POST", url, reqReader)
     if err != nil {

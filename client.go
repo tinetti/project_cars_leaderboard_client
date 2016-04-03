@@ -64,7 +64,7 @@ func createClient() (*Client, error) {
         handlers = append(handlers, handler)
     }
     if len(serverUrl) > 0 {
-        handler := &ServerWriterHandler{URL:serverUrl, username:username, password:password}
+        handler := &ServerWriterHandler{URL:serverUrl, Username:username, Password:password}
         handlers = append(handlers, handler)
     }
     if debugMode {
