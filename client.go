@@ -41,6 +41,10 @@ func createClient() (*Client, error) {
 
     var serverUrl string
     flag.StringVar(&serverUrl, "server-url", "", "server url")
+    var username string
+    flag.StringVar(&username, "username", "", "username")
+    var password string
+    flag.StringVar(&password, "password", "", "password")
 
     var debugMode bool
     flag.BoolVar(&debugMode, "debug", false, "debug mode")
@@ -60,7 +64,7 @@ func createClient() (*Client, error) {
         handlers = append(handlers, handler)
     }
     if len(serverUrl) > 0 {
-        handler := &ServerWriterHandler{URL:serverUrl}
+        handler := &ServerWriterHandler{URL:serverUrl, username:username, password:password}
         handlers = append(handlers, handler)
     }
     if debugMode {
